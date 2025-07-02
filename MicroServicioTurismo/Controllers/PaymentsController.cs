@@ -45,7 +45,7 @@ namespace MicroServicioTurismo.Controllers
                     .FirstOrDefaultAsync(p => p.PaymentId == id && p.IsActive);
 
                 if (payment == null)
-                    return NotFound(new { message = "Payment not found." });
+                    return NotFound(new { message = "Payment not found or inactive." });
 
                 return Ok(payment);
             }
@@ -64,7 +64,6 @@ namespace MicroServicioTurismo.Controllers
 
             try
             {
-                // Validate reservation
                 var reservation = await _context.Reservations.FindAsync(dto.ReservationId);
                 if (reservation == null || !reservation.IsActive)
                     return BadRequest(new { message = "Invalid ReservationId." });
@@ -77,7 +76,8 @@ namespace MicroServicioTurismo.Controllers
                     Method = dto.Method,
                     Status = dto.Status,
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.Payments.Add(payment);
@@ -102,7 +102,7 @@ namespace MicroServicioTurismo.Controllers
             {
                 var payment = await _context.Payments.FindAsync(id);
                 if (payment == null || !payment.IsActive)
-                    return NotFound(new { message = "Payment not found." });
+                    return NotFound(new { message = "Payment not found or inactive." });
 
                 if (dto.Amount.HasValue)
                     payment.Amount = dto.Amount.Value;
@@ -124,6 +124,42 @@ namespace MicroServicioTurismo.Controllers
             }
         }
 
+        // GET: api/payments/active
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive()
+        {
+            try
+            {
+                var active = await _context.Payments
+                    .Include(p => p.Reservation)
+                    .Where(p => p.IsActive)
+                    .ToListAsync();
+                return Ok(active);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving active payments.", detail = ex.Message });
+            }
+        }
+
+        // GET: api/payments/inactive
+        [HttpGet("inactive")]
+        public async Task<IActionResult> GetInactive()
+        {
+            try
+            {
+                var inactive = await _context.Payments
+                    .Include(p => p.Reservation)
+                    .Where(p => !p.IsActive)
+                    .ToListAsync();
+                return Ok(inactive);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving inactive payments.", detail = ex.Message });
+            }
+        }
+
         // DELETE: api/payments/{id} (logical)
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteLogical(int id)
@@ -131,8 +167,11 @@ namespace MicroServicioTurismo.Controllers
             try
             {
                 var payment = await _context.Payments.FindAsync(id);
-                if (payment == null || !payment.IsActive)
+                if (payment == null)
                     return NotFound(new { message = "Payment not found." });
+
+                if (!payment.IsActive)
+                    return BadRequest(new { message = "Payment is already inactive." });
 
                 payment.IsActive = false;
                 payment.UpdatedAt = DateTime.UtcNow;
@@ -143,6 +182,31 @@ namespace MicroServicioTurismo.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error deleting payment.", detail = ex.Message });
+            }
+        }
+
+        // PATCH: api/payments/{id}/reactivate
+        [HttpPatch("{id:int}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            try
+            {
+                var payment = await _context.Payments.FindAsync(id);
+                if (payment == null)
+                    return NotFound(new { message = "Payment not found." });
+
+                if (payment.IsActive)
+                    return BadRequest(new { message = "Payment is already active." });
+
+                payment.IsActive = true;
+                payment.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Payment reactivated." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error reactivating payment.", detail = ex.Message });
             }
         }
 

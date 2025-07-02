@@ -36,6 +36,40 @@ namespace MicroServicioTurismo.Controllers
             }
         }
 
+        // GET: api/users/active
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive()
+        {
+            try
+            {
+                var activeUsers = await _context.Users
+                                                .Where(u => u.IsActive)
+                                                .ToListAsync();
+                return Ok(activeUsers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving active users.", detail = ex.Message });
+            }
+        }
+
+        // GET: api/users/inactive
+        [HttpGet("inactive")]
+        public async Task<IActionResult> GetInactive()
+        {
+            try
+            {
+                var inactiveUsers = await _context.Users
+                                                  .Where(u => !u.IsActive)
+                                                  .ToListAsync();
+                return Ok(inactiveUsers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving inactive users.", detail = ex.Message });
+            }
+        }
+
         // GET: api/users/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
@@ -44,7 +78,7 @@ namespace MicroServicioTurismo.Controllers
             {
                 var user = await _context.Users.FindAsync(id);
                 if (user == null || !user.IsActive)
-                    return NotFound(new { message = "User not found." });
+                    return NotFound(new { message = "User not found or inactive." });
 
                 return Ok(user);
             }
@@ -80,7 +114,8 @@ namespace MicroServicioTurismo.Controllers
                     PasswordHash = hash,
                     PasswordSalt = salt,
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.Users.Add(user);
@@ -105,9 +140,8 @@ namespace MicroServicioTurismo.Controllers
             {
                 var user = await _context.Users.FindAsync(id);
                 if (user == null || !user.IsActive)
-                    return NotFound(new { message = "User not found." });
+                    return NotFound(new { message = "User not found or inactive." });
 
-                // Update fields
                 user.FirstName = dto.FirstName ?? user.FirstName;
                 user.LastName = dto.LastName ?? user.LastName;
                 user.Email = dto.Email ?? user.Email;
@@ -132,8 +166,11 @@ namespace MicroServicioTurismo.Controllers
             try
             {
                 var user = await _context.Users.FindAsync(id);
-                if (user == null || !user.IsActive)
+                if (user == null)
                     return NotFound(new { message = "User not found." });
+
+                if (!user.IsActive)
+                    return BadRequest(new { message = "User is already inactive." });
 
                 user.IsActive = false;
                 user.UpdatedAt = DateTime.UtcNow;
@@ -144,6 +181,31 @@ namespace MicroServicioTurismo.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error deleting user.", detail = ex.Message });
+            }
+        }
+
+        // PATCH: api/users/{id}/reactivate
+        [HttpPatch("{id:int}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            try
+            {
+                var user = await _context.Users.FindAsync(id);
+                if (user == null)
+                    return NotFound(new { message = "User not found." });
+
+                if (user.IsActive)
+                    return BadRequest(new { message = "User is already active." });
+
+                user.IsActive = true;
+                user.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "User reactivated." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error reactivating user.", detail = ex.Message });
             }
         }
 

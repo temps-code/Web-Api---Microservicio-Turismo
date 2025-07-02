@@ -36,6 +36,44 @@ namespace MicroServicioTurismo.Controllers
             }
         }
 
+        // GET: api/reservationdetails/active
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive()
+        {
+            try
+            {
+                var active = await _context.ReservationDetails
+                    .Include(rd => rd.Reservation)
+                    .Include(rd => rd.Tour)
+                    .Where(rd => rd.IsActive)
+                    .ToListAsync();
+                return Ok(active);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving active reservation details.", detail = ex.Message });
+            }
+        }
+
+        // GET: api/reservationdetails/inactive
+        [HttpGet("inactive")]
+        public async Task<IActionResult> GetInactive()
+        {
+            try
+            {
+                var inactive = await _context.ReservationDetails
+                    .Include(rd => rd.Reservation)
+                    .Include(rd => rd.Tour)
+                    .Where(rd => !rd.IsActive)
+                    .ToListAsync();
+                return Ok(inactive);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving inactive reservation details.", detail = ex.Message });
+            }
+        }
+
         // GET: api/reservationdetails/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
@@ -48,7 +86,7 @@ namespace MicroServicioTurismo.Controllers
                     .FirstOrDefaultAsync(rd => rd.ReservationDetailId == id && rd.IsActive);
 
                 if (detail == null)
-                    return NotFound(new { message = "Reservation detail not found." });
+                    return NotFound(new { message = "Reservation detail not found or inactive." });
 
                 return Ok(detail);
             }
@@ -67,12 +105,10 @@ namespace MicroServicioTurismo.Controllers
 
             try
             {
-                // Validate reservation
                 var reservation = await _context.Reservations.FindAsync(dto.ReservationId);
                 if (reservation == null || !reservation.IsActive)
                     return BadRequest(new { message = "Invalid ReservationId." });
 
-                // Validate tour
                 var tour = await _context.Tours.FindAsync(dto.TourId);
                 if (tour == null || !tour.IsActive)
                     return BadRequest(new { message = "Invalid TourId." });
@@ -84,7 +120,8 @@ namespace MicroServicioTurismo.Controllers
                     Description = dto.Description,
                     Price = dto.Price,
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.ReservationDetails.Add(detail);
@@ -109,7 +146,7 @@ namespace MicroServicioTurismo.Controllers
             {
                 var detail = await _context.ReservationDetails.FindAsync(id);
                 if (detail == null || !detail.IsActive)
-                    return NotFound(new { message = "Reservation detail not found." });
+                    return NotFound(new { message = "Reservation detail not found or inactive." });
 
                 if (dto.TourId.HasValue)
                 {
@@ -142,8 +179,11 @@ namespace MicroServicioTurismo.Controllers
             try
             {
                 var detail = await _context.ReservationDetails.FindAsync(id);
-                if (detail == null || !detail.IsActive)
+                if (detail == null)
                     return NotFound(new { message = "Reservation detail not found." });
+
+                if (!detail.IsActive)
+                    return BadRequest(new { message = "Reservation detail is already inactive." });
 
                 detail.IsActive = false;
                 detail.UpdatedAt = DateTime.UtcNow;
@@ -154,6 +194,31 @@ namespace MicroServicioTurismo.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error deleting reservation detail.", detail = ex.Message });
+            }
+        }
+
+        // PATCH: api/reservationdetails/{id}/reactivate
+        [HttpPatch("{id:int}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            try
+            {
+                var detail = await _context.ReservationDetails.FindAsync(id);
+                if (detail == null)
+                    return NotFound(new { message = "Reservation detail not found." });
+
+                if (detail.IsActive)
+                    return BadRequest(new { message = "Reservation detail is already active." });
+
+                detail.IsActive = true;
+                detail.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Reservation detail reactivated." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error reactivating reservation detail.", detail = ex.Message });
             }
         }
 

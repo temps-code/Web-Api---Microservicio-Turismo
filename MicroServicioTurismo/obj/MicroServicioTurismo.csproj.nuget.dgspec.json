@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\MicroServicioTurismo\\MicroServicioTurismo.csproj": {}
+    "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\Web-Api---Microservicio-Turismo\\MicroServicioTurismo\\MicroServicioTurismo.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\MicroServicioTurismo\\MicroServicioTurismo.csproj": {
+    "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\Web-Api---Microservicio-Turismo\\MicroServicioTurismo\\MicroServicioTurismo.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\MicroServicioTurismo\\MicroServicioTurismo.csproj",
+        "projectUniqueName": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\Web-Api---Microservicio-Turismo\\MicroServicioTurismo\\MicroServicioTurismo.csproj",
         "projectName": "MicroServicioTurismo",
-        "projectPath": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\MicroServicioTurismo\\MicroServicioTurismo.csproj",
+        "projectPath": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\Web-Api---Microservicio-Turismo\\MicroServicioTurismo\\MicroServicioTurismo.csproj",
         "packagesPath": "C:\\Users\\Temps\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\MicroServicioTurismo\\obj\\",
+        "outputPath": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\Web-Api---Microservicio-Turismo\\MicroServicioTurismo\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "jE51lUH8jak=",
+  "dgSpecHash": "nunFCEySpws=",
   "success": true,
-  "projectFilePath": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\MicroServicioTurismo\\MicroServicioTurismo.csproj",
+  "projectFilePath": "C:\\Users\\Temps\\Documents\\Sistemas de Informacion 2\\Web-Api---Microservicio-Turismo\\MicroServicioTurismo\\MicroServicioTurismo.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Temps\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\Temps\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

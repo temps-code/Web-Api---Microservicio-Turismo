@@ -35,6 +35,44 @@ namespace MicroServicioTurismo.Controllers
             }
         }
 
+        // GET: api/reservations/active
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive()
+        {
+            try
+            {
+                var active = await _context.Reservations
+                    .Include(r => r.User)
+                    .Include(r => r.Tour)
+                    .Where(r => r.IsActive)
+                    .ToListAsync();
+                return Ok(active);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving active reservations.", detail = ex.Message });
+            }
+        }
+
+        // GET: api/reservations/inactive
+        [HttpGet("inactive")]
+        public async Task<IActionResult> GetInactive()
+        {
+            try
+            {
+                var inactive = await _context.Reservations
+                    .Include(r => r.User)
+                    .Include(r => r.Tour)
+                    .Where(r => !r.IsActive)
+                    .ToListAsync();
+                return Ok(inactive);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving inactive reservations.", detail = ex.Message });
+            }
+        }
+
         // GET: api/reservations/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
@@ -47,7 +85,7 @@ namespace MicroServicioTurismo.Controllers
                     .FirstOrDefaultAsync(r => r.ReservationId == id && r.IsActive);
 
                 if (reservation == null)
-                    return NotFound(new { message = "Reservation not found." });
+                    return NotFound(new { message = "Reservation not found or inactive." });
 
                 return Ok(reservation);
             }
@@ -66,17 +104,14 @@ namespace MicroServicioTurismo.Controllers
 
             try
             {
-                // Validate user
                 var user = await _context.Users.FindAsync(dto.UserId);
                 if (user == null || !user.IsActive)
                     return BadRequest(new { message = "Invalid UserId." });
 
-                // Validate tour
                 var tour = await _context.Tours.FindAsync(dto.TourId);
                 if (tour == null || !tour.IsActive)
                     return BadRequest(new { message = "Invalid TourId." });
 
-                // Validate capacity
                 var totalBooked = await _context.Reservations
                     .Where(r => r.TourId == dto.TourId && r.IsActive)
                     .SumAsync(r => r.SeatsBooked);
@@ -92,7 +127,8 @@ namespace MicroServicioTurismo.Controllers
                     SeatsBooked = dto.SeatsBooked,
                     Status = "Pending",
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.Reservations.Add(reservation);
@@ -117,9 +153,8 @@ namespace MicroServicioTurismo.Controllers
             {
                 var reservation = await _context.Reservations.FindAsync(id);
                 if (reservation == null || !reservation.IsActive)
-                    return NotFound(new { message = "Reservation not found." });
+                    return NotFound(new { message = "Reservation not found or inactive." });
 
-                // Validate capacity if seats updated
                 if (dto.SeatsBooked.HasValue)
                 {
                     var tour = await _context.Tours.FindAsync(reservation.TourId);
@@ -156,8 +191,11 @@ namespace MicroServicioTurismo.Controllers
             try
             {
                 var reservation = await _context.Reservations.FindAsync(id);
-                if (reservation == null || !reservation.IsActive)
+                if (reservation == null)
                     return NotFound(new { message = "Reservation not found." });
+
+                if (!reservation.IsActive)
+                    return BadRequest(new { message = "Reservation is already inactive." });
 
                 reservation.IsActive = false;
                 reservation.UpdatedAt = DateTime.UtcNow;
@@ -168,6 +206,31 @@ namespace MicroServicioTurismo.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error deleting reservation.", detail = ex.Message });
+            }
+        }
+
+        // PATCH: api/reservations/{id}/reactivate
+        [HttpPatch("{id:int}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            try
+            {
+                var reservation = await _context.Reservations.FindAsync(id);
+                if (reservation == null)
+                    return NotFound(new { message = "Reservation not found." });
+
+                if (reservation.IsActive)
+                    return BadRequest(new { message = "Reservation is already active." });
+
+                reservation.IsActive = true;
+                reservation.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Reservation reactivated." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error reactivating reservation.", detail = ex.Message });
             }
         }
 

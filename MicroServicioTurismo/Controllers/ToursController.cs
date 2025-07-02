@@ -33,6 +33,40 @@ namespace MicroServicioTurismo.Controllers
             }
         }
 
+        // GET: api/tours/active
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive()
+        {
+            try
+            {
+                var activeTours = await _context.Tours
+                                                .Where(t => t.IsActive)
+                                                .ToListAsync();
+                return Ok(activeTours);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving active tours.", detail = ex.Message });
+            }
+        }
+
+        // GET: api/tours/inactive
+        [HttpGet("inactive")]
+        public async Task<IActionResult> GetInactive()
+        {
+            try
+            {
+                var inactiveTours = await _context.Tours
+                                                  .Where(t => !t.IsActive)
+                                                  .ToListAsync();
+                return Ok(inactiveTours);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving inactive tours.", detail = ex.Message });
+            }
+        }
+
         // GET: api/tours/{id}
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
@@ -41,7 +75,7 @@ namespace MicroServicioTurismo.Controllers
             {
                 var tour = await _context.Tours.FindAsync(id);
                 if (tour == null || !tour.IsActive)
-                    return NotFound(new { message = "Tour not found." });
+                    return NotFound(new { message = "Tour not found or inactive." });
 
                 return Ok(tour);
             }
@@ -69,7 +103,8 @@ namespace MicroServicioTurismo.Controllers
                     Capacity = dto.Capacity,
                     Price = dto.Price,
                     IsActive = true,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
                 };
 
                 _context.Tours.Add(tour);
@@ -94,7 +129,7 @@ namespace MicroServicioTurismo.Controllers
             {
                 var tour = await _context.Tours.FindAsync(id);
                 if (tour == null || !tour.IsActive)
-                    return NotFound(new { message = "Tour not found." });
+                    return NotFound(new { message = "Tour not found or inactive." });
 
                 if (!string.IsNullOrWhiteSpace(dto.Title))
                     tour.Title = dto.Title;
@@ -127,8 +162,11 @@ namespace MicroServicioTurismo.Controllers
             try
             {
                 var tour = await _context.Tours.FindAsync(id);
-                if (tour == null || !tour.IsActive)
+                if (tour == null)
                     return NotFound(new { message = "Tour not found." });
+
+                if (!tour.IsActive)
+                    return BadRequest(new { message = "Tour is already inactive." });
 
                 tour.IsActive = false;
                 tour.UpdatedAt = DateTime.UtcNow;
@@ -139,6 +177,31 @@ namespace MicroServicioTurismo.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error deleting tour.", detail = ex.Message });
+            }
+        }
+
+        // PATCH: api/tours/{id}/reactivate
+        [HttpPatch("{id:int}/reactivate")]
+        public async Task<IActionResult> Reactivate(int id)
+        {
+            try
+            {
+                var tour = await _context.Tours.FindAsync(id);
+                if (tour == null)
+                    return NotFound(new { message = "Tour not found." });
+
+                if (tour.IsActive)
+                    return BadRequest(new { message = "Tour is already active." });
+
+                tour.IsActive = true;
+                tour.UpdatedAt = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Tour reactivated." });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error reactivating tour.", detail = ex.Message });
             }
         }
 
