@@ -1,6 +1,7 @@
 // Program.cs
 using Microsoft.EntityFrameworkCore;
 using MicroServicioTurismo.Data;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,8 +20,13 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Agregar controladores
-builder.Services.AddControllers();
+// Agregar controladores con opciones JSON para ignorar ciclos
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+    {
+        opts.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+        opts.JsonSerializerOptions.WriteIndented = true;
+    });
 
 // (Opcional) OpenAPI si lo deseas
 builder.Services.AddOpenApi();
