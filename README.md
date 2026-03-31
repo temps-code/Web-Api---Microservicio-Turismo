@@ -78,17 +78,41 @@ Todos los controladores siguen el patrón `api/[controller]` y exponen las sigui
 
 ---
 
-## Configuración
+## Docker
 
-La cadena de conexión se toma de `appsettings.json` bajo la clave `DefaultConnection` (diseñado para uso con Docker Compose):
+El proyecto incluye un `Dockerfile` multi-stage y un `docker-compose.yml` que levanta dos servicios:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=...;Database=TurismoDB;..."
-  }
-}
+| Servicio | Imagen | Puerto |
+|---|---|---|
+| `db` | SQL Server 2022 | `1433` |
+| `api` | ASP.NET Core 9 (build local) | `8001 → 8080` |
+
+### Levantar con Docker Compose
+
+```bash
+cd MicroServicioTurismo
+docker compose up --build
 ```
+
+La API queda disponible en `http://localhost:8001/api/`.
+
+El `docker-compose.yml` inyecta la cadena de conexión como variable de entorno, por lo que no es necesario modificar `appsettings.json`:
+
+```
+ConnectionStrings__DefaultConnection=Server=db;Database=ProductDB;User=sa;Password=Server123.;Encrypt=False;TrustServerCertificate=True;
+```
+
+> Los contenedores se comunican en la red interna `backend` (bridge). El servicio `api` depende de `db` vía `depends_on`.
+
+### Dockerfile
+
+El build usa dos etapas:
+1. **build** — SDK 9.0: restaura, compila y publica en modo Release.
+2. **runtime** — ASP.NET 9.0: imagen reducida que solo ejecuta el binario publicado en el puerto `8080`.
+
+---
+
+## Configuración
 
 Al arrancar, la aplicación:
 1. Ejecuta `EnsureCreated()` y `Migrate()` para inicializar la base de datos.
@@ -96,17 +120,13 @@ Al arrancar, la aplicación:
 
 ---
 
-## Ejecución
+## Ejecución local (sin Docker)
 
 ```bash
-# Restaurar dependencias
+# Requiere SQL Server accesible y cadena de conexión configurada en appsettings.json
 dotnet restore
-
-# Ejecutar en modo desarrollo
 dotnet run --project MicroServicioTurismo
 ```
-
-La API queda disponible en `http://localhost:{puerto}/api/`.
 
 > El CORS está configurado con `AllowAnyOrigin` para entorno de desarrollo.
 
@@ -117,6 +137,8 @@ La API queda disponible en `http://localhost:{puerto}/api/`.
 ```
 Web-Api---Microservicio-Turismo/
 └── MicroServicioTurismo/
+    ├── dockerfile
+    ├── docker-compose.yml
     ├── MicroServicioTurismo.csproj
     ├── MicroServicioTurismo.sln
     ├── Program.cs
