@@ -1,8 +1,8 @@
 <div align="center">
 
-<h1>Microservicio de Turismo</h1>
+<h1>Tourism Microservice</h1>
 
-<p><strong>API REST para la gestión de tours, reservaciones y pagos — desarrollada con ASP.NET Core 9 y dockerizada con SQL Server.</strong></p>
+<p><strong>REST API for managing tours, reservations, and payments — built with ASP.NET Core 9 and dockerized with SQL Server.</strong></p>
 
 <p>
   <img src="https://img.shields.io/badge/.NET_9-512BD4?style=for-the-badge&logo=dotnet&logoColor=white" alt=".NET 9">
@@ -15,48 +15,70 @@
 
 ---
 
-**Proyecto Académico — 2025**
-Materia: Desarrollo de Aplicaciones Web / Servicios Web
+📄 Read this in: **English** | [Español](README.es.md)
+
+**Academic Project — 2025**
+Universidad Privada Domingo Savio — Ing. de Sistemas
+Course: Web Application Development / Web Services
 
 ---
 
-## Descripción
+## Table of Contents
 
-API REST que gestiona el ciclo completo de un sistema de turismo: alta de tours, registro de usuarios, reservaciones con control de capacidad, detalles adicionales por reserva y pagos.
+- [What It Does](#what-it-does)
+- [Stack](#stack)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Endpoints](#endpoints)
+- [Seed Data](#seed-data)
+- [Author](#author)
 
-Todos los recursos implementan **borrado lógico** (`IsActive`) además del borrado físico, y campos de auditoría (`CreatedAt`, `UpdatedAt`). Al iniciar, la aplicación aplica migraciones automáticamente e inserta datos de prueba si la base está vacía.
+---
+
+## What It Does
+
+REST API that manages the complete lifecycle of a tourism system: tour management, user registration, reservations with capacity control, additional reservation details, and payments.
+
+Key features:
+
+- Full CRUD for 5 resources: tours, users, reservations, reservation details, and payments
+- Logical delete (`IsActive`) and physical delete on all resources, with reactivation support
+- Capacity validation when creating or updating reservations
+- Password hashing with HMACSHA512 + salt
+- Automatic database migration and seed data on startup
+- CORS configured for development environments
 
 ---
 
 ## Stack
 
-| Categoría | Tecnología | Versión |
+| Category | Technology | Version |
 |---|---|---|
 | Framework | ASP.NET Core | 9.0 |
 | ORM | Entity Framework Core | 9.0.6 |
-| Base de datos | SQL Server | 2022 (Docker) |
-| Documentación | OpenAPI (Swagger) | 9.0.5 |
-| Contenedores | Docker + Docker Compose | — |
+| Database | SQL Server | 2022 |
+| API Docs | OpenAPI (Swagger) | 9.0.5 |
+| Containers | Docker + Docker Compose | — |
 
 ---
 
-## Arquitectura
+## Architecture
 
 ```
 MicroServicioTurismo/
-├── Controllers/          # Endpoints HTTP (5 controladores)
-├── DTOs/                 # Objetos de transferencia de datos
-├── Models/               # Entidades del dominio
+├── Controllers/          # HTTP endpoints (5 controllers)
+├── DTOs/                 # Data transfer objects
+├── Models/               # Domain entities
 ├── Data/
-│   ├── AppDbContext.cs   # Contexto de EF Core
-│   └── DbInitializer.cs  # Seed de datos de prueba
+│   ├── AppDbContext.cs   # EF Core context
+│   └── DbInitializer.cs  # Test data seed
 ├── Utils/
-│   └── PasswordHelper.cs # Hash HMACSHA512 con salt
+│   └── PasswordHelper.cs # HMACSHA512 hashing with salt
 ├── dockerfile
 └── docker-compose.yml
 ```
 
-**Modelo de datos:**
+**Data model:**
 
 ```
 User ──────< Reservation >────── Tour
@@ -67,37 +89,35 @@ User ──────< Reservation >────── Tour
 
 ---
 
-## Docker
+## Installation
 
-El `docker-compose.yml` levanta dos servicios conectados en una red interna `backend`:
+### Option 1: Docker (Recommended)
 
-| Servicio | Imagen | Puerto expuesto |
+The `docker-compose.yml` spins up two services on an internal `backend` network:
+
+| Service | Image | Port |
 |---|---|---|
 | `db` | SQL Server 2022 | `1433` |
-| `api` | ASP.NET Core 9 (build local) | `8001 → 8080` |
+| `api` | ASP.NET Core 9 (local build) | `8001 → 8080` |
 
 ```bash
 cd MicroServicioTurismo
 docker compose up --build
 ```
 
-La API queda disponible en `http://localhost:8001/api/`.
+The API will be available at `http://localhost:8001/api/`.
 
-> La cadena de conexión se inyecta como variable de entorno desde el compose — no es necesario modificar `appsettings.json`.
+> The connection string is injected as an environment variable from the compose file — no changes to `appsettings.json` required.
 
----
+### Option 2: Local (.NET 9 SDK required)
 
-## Instalación local (sin Docker)
-
-Requiere .NET 9 SDK y una instancia de SQL Server accesible.
-
-1. Clonar el repositorio:
+1. Clone the repository:
    ```bash
-   git clone <url-del-repo>
+   git clone <repository-url>
    cd MicroServicioTurismo
    ```
 
-2. Configurar la cadena de conexión en `appsettings.json`:
+2. Configure the connection string in `appsettings.json`:
    ```json
    {
      "ConnectionStrings": {
@@ -106,56 +126,56 @@ Requiere .NET 9 SDK y una instancia de SQL Server accesible.
    }
    ```
 
-3. Ejecutar:
+3. Run:
    ```bash
    dotnet run
    ```
 
-La aplicación aplica las migraciones e inserta el seed de prueba automáticamente al iniciar.
+The application automatically applies migrations and inserts seed data on startup.
 
 ---
 
 ## Endpoints
 
-Todos los controladores siguen el patrón `api/[controller]` y exponen el mismo conjunto de operaciones:
+All controllers follow the `api/[controller]` pattern and expose the same set of operations:
 
-| Método | Ruta | Descripción |
+| Method | Route | Description |
 |---|---|---|
-| `GET` | `/api/{recurso}` | Listar registros activos |
-| `GET` | `/api/{recurso}/active` | Listar activos (explícito) |
-| `GET` | `/api/{recurso}/inactive` | Listar inactivos |
-| `GET` | `/api/{recurso}/{id}` | Obtener por ID |
-| `POST` | `/api/{recurso}` | Crear |
-| `PUT` | `/api/{recurso}/{id}` | Actualizar |
-| `DELETE` | `/api/{recurso}/{id}` | Borrado lógico |
-| `PATCH` | `/api/{recurso}/{id}/reactivate` | Reactivar |
-| `DELETE` | `/api/{recurso}/{id}/physical` | Borrado físico permanente |
+| `GET` | `/api/{resource}` | List active records |
+| `GET` | `/api/{resource}/active` | List active (explicit) |
+| `GET` | `/api/{resource}/inactive` | List inactive |
+| `GET` | `/api/{resource}/{id}` | Get by ID |
+| `POST` | `/api/{resource}` | Create |
+| `PUT` | `/api/{resource}/{id}` | Update |
+| `DELETE` | `/api/{resource}/{id}` | Logical delete |
+| `PATCH` | `/api/{resource}/{id}/reactivate` | Reactivate |
+| `DELETE` | `/api/{resource}/{id}/physical` | Permanent delete |
 
-**Recursos:** `tours` · `users` · `reservations` · `reservationdetails` · `payments`
+**Resources:** `tours` · `users` · `reservations` · `reservationdetails` · `payments`
 
-**Validaciones de negocio:**
-- Reservación: verifica usuario y tour activos, y disponibilidad de asientos antes de confirmar.
-- Usuario: unicidad de `username` y `email` al crear.
+**Business rules:**
+- Reservation: validates that user and tour are active, and checks seat availability before confirming.
+- User: enforces unique `username` and `email` on creation.
 
 ---
 
-## Datos de prueba (Seed)
+## Seed Data
 
-Al iniciar con la base vacía, `DbInitializer` inserta:
+On first startup with an empty database, `DbInitializer` inserts:
 
-| Entidad | Registros |
+| Entity | Records |
 |---|---|
-| Usuarios | 3 (2 Customer, 1 Employee) — password: `Prueba123` |
-| Tours | 2 (ciudad y montaña) |
-| Reservaciones | 2 (Confirmed y Pending) |
-| Detalles | 2 (guía bilingüe, almuerzo opcional) |
-| Pagos | 2 (método: Tarjeta, estado: Completed) |
+| Users | 3 (2 Customer, 1 Employee) — default password: `Prueba123` |
+| Tours | 2 (city tour and mountain hike) |
+| Reservations | 2 (Confirmed and Pending) |
+| Details | 2 (bilingual guide, optional lunch) |
+| Payments | 2 (Method: Card, Status: Completed) |
 
 ---
 
-## Autor
+## Author
 
-Desarrollado individualmente como proyecto académico.
+Developed individually as an academic project.
 
 ---
 
