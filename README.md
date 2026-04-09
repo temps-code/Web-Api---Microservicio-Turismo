@@ -17,6 +17,16 @@
 
 📄 Read this in: **English** | [Español](README.es.md)
 
+---
+
+## Architecture Diagram
+
+<div align="center">
+<img src="docs/architecture.png" alt="Tourism Microservice — Architecture Diagram" width="100%" />
+</div>
+
+---
+
 **Academic Project — 2025**
 Universidad Privada Domingo Savio — Ing. de Sistemas
 Course: Web Application Development / Web Services

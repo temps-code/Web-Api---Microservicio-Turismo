@@ -17,6 +17,16 @@
 
 📄 Leé esto en: [English](README.md) | **Español**
 
+---
+
+## Diagrama de Arquitectura
+
+<div align="center">
+<img src="docs/architecture.png" alt="Microservicio de Turismo — Diagrama de Arquitectura" width="100%" />
+</div>
+
+---
+
 **Proyecto Académico — 2025**
 Universidad Privada Domingo Savio — Ing. de Sistemas
 Materia: Desarrollo de Aplicaciones Web / Servicios Web
